@@ -1,0 +1,60 @@
+# Local paper inputs and MinerU outputs
+input_pdfs/
+mineru_result/
+output/
+outputs/
+*/hybrid_auto/
+
+# Papers and generated documents
+*.pdf
+*.PDF
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.cache
+
+# Local configuration and secrets
+.env
+.env.*
+scripts/autodl_config.json
+.ssh/
+**/.ssh/
+
+# Tokens, passwords, and credential-like files
+token
+tokens
+*.token
+*token*
+password
+passwords
+*.password
+*password*
+secret
+secrets
+*.secret
+*secret*
+credentials
+credentials.*
+*.credentials
+
+# SSH private keys
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.pem
+*.key
+*.ppk
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

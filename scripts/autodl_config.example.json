@@ -1,0 +1,11 @@
+{
+  "ssh_host": "your-autodl-ssh-host.example.com",
+  "ssh_port": "22",
+  "ssh_private_key": "%USERPROFILE%\\.ssh\\autodl_mineru_ed25519",
+  "remote_input": "/root/autodl-tmp/input",
+  "remote_output": "/root/autodl-tmp/demo_1",
+  "local_input_dir": "input_pdfs",
+  "local_result_dir": "mineru_result",
+  "mineru_venv_activate": "/root/autodl-tmp/mineru_env/bin/activate",
+  "mineru_args": ""
+}
