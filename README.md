@@ -137,6 +137,103 @@ scripts/autodl_config.json
 - `local_result_dir`：本地解析结果保存目录；
 - `mineru_venv_activate`：服务器上 MinerU 虚拟环境的激活脚本。
 
+### Codex 如何连接 AutoDL 服务器
+
+这个项目中，Codex 并不是通过网页操作 AutoDL，也不是通过 AutoDL API 自动开机。当前流程默认用户先手动启动 AutoDL 服务器，然后 Codex 通过 SSH 连接已经启动的服务器。
+
+连接服务器依赖三个核心信息：
+
+```text
+ssh_host + ssh_port + ssh_private_key
+```
+
+也就是：
+
+```text
+服务器域名 + SSH 端口 + 本地私钥
+```
+
+对应到配置文件就是：
+
+```json
+{
+  "ssh_host": "connect.example.seetacloud.com",
+  "ssh_port": "41084",
+  "ssh_private_key": "C:\\Users\\YOUR_NAME\\.ssh\\autodl_mineru_ed25519"
+}
+```
+
+pipeline 内部会根据这些字段拼出类似下面的连接方式：
+
+```powershell
+ssh -i "C:\Users\YOUR_NAME\.ssh\autodl_mineru_ed25519" -p 41084 root@connect.example.seetacloud.com
+```
+
+上传 PDF 和下载结果时，则会使用同一组 SSH 信息调用 `scp`：
+
+```powershell
+scp -i "<ssh_private_key>" -P "<ssh_port>" "<local_pdf>" root@<ssh_host>:/root/autodl-tmp/input/
+```
+
+因此，只要 SSH 免密登录已经配置成功，Codex 就可以通过 pipeline 自动完成：
+
+```text
+连接服务器
+  ↓
+上传 PDF
+  ↓
+运行 MinerU
+  ↓
+下载解析结果
+```
+
+### 如何获得服务器域名、端口和私钥
+
+在 AutoDL 实例页面启动服务器后，通常可以看到类似下面的 SSH 登录命令：
+
+```bash
+ssh -p 41084 root@connect.example.seetacloud.com
+```
+
+其中：
+
+- `41084` 就是 `ssh_port`；
+- `connect.example.seetacloud.com` 就是 `ssh_host`；
+- `root` 是远程登录用户。
+
+如果使用密码登录，每次运行 pipeline 都可能需要人工输入密码，不适合自动化。因此推荐配置 SSH key 免密登录。
+
+一般流程是：
+
+1. 在本地生成 SSH key：
+
+   ```powershell
+   ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\autodl_mineru_ed25519"
+   ```
+
+2. 生成后会得到两个文件：
+
+   ```text
+   C:\Users\YOUR_NAME\.ssh\autodl_mineru_ed25519
+   C:\Users\YOUR_NAME\.ssh\autodl_mineru_ed25519.pub
+   ```
+
+3. 把 `.pub` 公钥内容添加到 AutoDL 服务器的 `~/.ssh/authorized_keys` 中，或者添加到 AutoDL 提供的 SSH key 配置位置。
+
+4. 测试免密连接：
+
+   ```powershell
+   ssh -i "$env:USERPROFILE\.ssh\autodl_mineru_ed25519" -p 41084 root@connect.example.seetacloud.com "echo ssh-ok"
+   ```
+
+5. 如果输出：
+
+   ```text
+   ssh-ok
+   ```
+
+   就说明 Codex 后续可以通过 pipeline 自动连接服务器。
+
 默认情况下：
 
 ```json
@@ -151,7 +248,6 @@ mineru -p xxx.pdf -o /root/autodl-tmp/demo_1
 ```
 
 ---
-
 ## 如何运行 pipeline
 
 在 PowerShell 中进入项目目录：
@@ -271,64 +367,6 @@ Codex 应该自动完成：
 ```
 
 这可以让论文阅读更接近真实精读过程。
-
----
-
-## 如何在 README 中添加图片
-
-如果你想在 README 里加入项目流程图或截图，可以这样做。
-
-### 第一步：创建图片文件夹
-
-在项目根目录下创建：
-
-```text
-assets/
-```
-
-### 第二步：把图片放进去
-
-例如：
-
-```text
-assets/workflow.png
-```
-
-### 第三步：在 README 中引用图片
-
-Markdown 写法如下：
-
-```markdown
-![Workflow](assets/workflow.png)
-```
-
-如果想控制展示宽度，可以写成：
-
-```html
-<p align="center">
-  <img src="assets/workflow.png" alt="Workflow" width="800">
-</p>
-```
-
-推荐放置图片的位置：
-
-1. 在“项目整体流程”下面放一张 workflow 图；
-2. 在“如何让 Codex 自动执行”下面放一张 VS Code/Codex 截图；
-3. 在“论文阅读 skill 的能力”下面放一张预精读输出示例截图。
-
----
-
-## 展示建议
-
-如果在组会中展示这个项目，可以按照以下顺序讲：
-
-1. 为什么直接读 PDF 不稳定；
-2. MinerU 如何把 PDF 转成结构化材料；
-3. Codex 如何调用 pipeline 自动上传、解析、下载；
-4. `mineru-paper-reading` 如何做预精读和逐句精读；
-5. 展示一个实际例子，例如 `LoRA.pdf`；
-6. 展示最终生成的 Markdown 路径和 Codex 阅读输出；
-7. 总结这个 workflow 对文献阅读效率的提升。
 
 ---
 
