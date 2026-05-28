@@ -254,11 +254,10 @@ mineru -p xxx.pdf -o /root/autodl-tmp/demo_1
 
 ### 1. 克隆本项目
 
-在本地选择一个工作目录，然后执行：
+在本地选择自己的对应工作目录，然后执行：
 
 ```powershell
-git clone https://github.com/YOUR_NAME/mineru-paper-reading-workspace.git
-cd mineru-paper-reading-workspace
+git clone https://github.com/Muradil-mamat-211/mineru-paper-reading-workspace.git
 ```
 
 如果仓库是私有仓库，需要先登录 GitHub，或者使用已经配置好凭据的 Git / GitHub CLI。
