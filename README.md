@@ -248,6 +248,188 @@ mineru -p xxx.pdf -o /root/autodl-tmp/demo_1
 ```
 
 ---
+## 从 GitHub 克隆并部署
+
+如果其他人想复现这个项目，推荐按下面顺序完成：先把 GitHub 仓库克隆到本地，再准备 AutoDL 服务器上的 MinerU 环境，最后填写本地配置文件，让 Codex 可以通过 pipeline 自动连接服务器。
+
+### 1. 克隆本项目
+
+在本地选择一个工作目录，然后执行：
+
+```powershell
+git clone https://github.com/YOUR_NAME/mineru-paper-reading-workspace.git
+cd mineru-paper-reading-workspace
+```
+
+如果仓库是私有仓库，需要先登录 GitHub，或者使用已经配置好凭据的 Git / GitHub CLI。
+
+### 2. 准备本地配置文件
+
+克隆仓库后，先根据示例配置创建自己的本地配置文件：
+
+```powershell
+Copy-Item .\scripts\autodl_config.example.json .\scripts\autodl_config.json
+```
+
+然后编辑：
+
+```text
+scripts/autodl_config.json
+```
+
+至少需要填写：
+
+```json
+{
+  "ssh_host": "connect.example.seetacloud.com",
+  "ssh_port": "41084",
+  "ssh_private_key": "C:\\Users\\YOUR_NAME\\.ssh\\autodl_mineru_ed25519",
+  "remote_input": "/root/autodl-tmp/input",
+  "remote_output": "/root/autodl-tmp/demo_1",
+  "local_input_dir": "input_pdfs",
+  "local_result_dir": "mineru_result",
+  "mineru_venv_activate": "/root/autodl-tmp/mineru_env/bin/activate"
+}
+```
+
+这里的核心是让本地 pipeline 知道三件事：
+
+```text
+连接哪台服务器：ssh_host
+通过哪个端口连接：ssh_port
+使用哪个本地私钥登录：ssh_private_key
+```
+
+也就是说，Codex 后续并不是手动登录服务器，而是通过 pipeline 自动调用 `ssh` 和 `scp`：
+
+```powershell
+ssh -i "<ssh_private_key>" -p "<ssh_port>" root@<ssh_host>
+scp -i "<ssh_private_key>" -P "<ssh_port>" "<local_pdf>" root@<ssh_host>:/root/autodl-tmp/input/
+```
+
+只要 `autodl_config.json` 配置正确，并且 SSH 免密登录已经成功，Codex 就可以自动完成上传 PDF、远程运行 MinerU、下载解析结果这一整套流程。
+
+### 3. 在 AutoDL 服务器准备 MinerU 环境
+
+本项目默认服务器上的 MinerU 环境位于：
+
+```bash
+/root/autodl-tmp/mineru_env
+```
+
+如果是新服务器，可以按下面思路准备环境。实际版本可以根据自己的 CUDA、PyTorch 和 MinerU 版本调整；本项目验证过的 MinerU 版本是 `3.1.15`。
+
+先进入服务器：
+
+```powershell
+ssh -p <ssh_port> root@<ssh_host>
+```
+
+在服务器中创建环境目录：
+
+```bash
+mkdir -p /root/autodl-tmp
+cd /root/autodl-tmp
+```
+
+如果服务器已经有 `uv`，可以直接创建虚拟环境：
+
+```bash
+uv venv /root/autodl-tmp/mineru_env --python 3.10
+source /root/autodl-tmp/mineru_env/bin/activate
+```
+
+如果没有 `uv`，可以先安装 `uv`，或者使用服务器已有的 Python/Conda 环境。创建环境后，安装 MinerU：
+
+```bash
+uv pip install --python /root/autodl-tmp/mineru_env/bin/python "mineru[pipeline]==3.1.15"
+```
+
+然后检查 MinerU：
+
+```bash
+source /root/autodl-tmp/mineru_env/bin/activate
+mineru --version
+```
+
+如果项目需要本地 VLM / pipeline 后端，还需要确保服务器里可以正常导入 PyTorch：
+
+```bash
+python - <<'PY'
+import torch
+print("torch ok:", torch.__version__)
+PY
+```
+
+如果 `torch` 无法导入，需要根据服务器的 CUDA 版本安装对应的 PyTorch。很多 AutoDL 镜像已经预装 PyTorch，也可以直接选择带 PyTorch/CUDA 的镜像后再安装 MinerU。
+
+### 4. 配置 SSH 免密登录
+
+如果每次连接服务器都需要输入密码，Codex 自动执行 pipeline 会很不方便。因此建议为 AutoDL 配置 SSH key。
+
+在本地生成 key：
+
+```powershell
+ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\autodl_mineru_ed25519"
+```
+
+生成后会得到：
+
+```text
+C:\Users\YOUR_NAME\.ssh\autodl_mineru_ed25519
+C:\Users\YOUR_NAME\.ssh\autodl_mineru_ed25519.pub
+```
+
+将 `.pub` 公钥内容添加到服务器的：
+
+```bash
+~/.ssh/authorized_keys
+```
+
+然后在本地测试：
+
+```powershell
+ssh -i "$env:USERPROFILE\.ssh\autodl_mineru_ed25519" -p <ssh_port> root@<ssh_host> "echo ssh-ok"
+```
+
+如果输出：
+
+```text
+ssh-ok
+```
+
+说明本地已经可以通过私钥免密连接服务器。
+
+### 5. 验证完整 workflow
+
+完成本地配置和服务器环境后，把论文 PDF 放到：
+
+```text
+input_pdfs/
+```
+
+然后在项目根目录运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\autodl_mineru_manual_pipeline.ps1
+```
+
+或者指定某篇 PDF：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\autodl_mineru_manual_pipeline.ps1 -PdfPath ".\input_pdfs\paper.pdf"
+```
+
+成功后，本地会生成：
+
+```text
+mineru_result/<paper_name>/hybrid_auto/<paper_name>.md
+```
+
+之后就可以让 Codex 使用 `mineru-paper-reading` skill 进行预精读或逐句精读。
+
+---
+
 ## 如何运行 pipeline
 
 在 PowerShell 中进入项目目录：
