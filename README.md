@@ -260,7 +260,6 @@ mineru -p xxx.pdf -o /root/autodl-tmp/demo_1
 git clone https://github.com/Muradil-mamat-211/mineru-paper-reading-workspace.git
 ```
 
-如果仓库是私有仓库，需要先登录 GitHub，或者使用已经配置好凭据的 Git / GitHub CLI。
 
 ### 2. 准备本地配置文件
 
