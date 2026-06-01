@@ -93,6 +93,24 @@ Codex 使用 mineru-paper-reading skill 进行论文阅读
 
 ---
 
+## Claude Code 兼容结构
+
+如果希望同一个论文阅读 skill 也能被 Claude Code 使用，可以额外提供 Claude Code 的项目级 skill 目录：
+
+```text
+.
+├── README.md
+├── .claude/
+│   └── skills/
+│       └── mineru-paper-reading/
+│           └── SKILL.md
+├── scripts/
+│   ├── autodl_mineru_manual_pipeline.ps1
+│   ├── autodl_config.example.json
+│   └── autodl_config.json
+├── input_pdfs/
+└── mineru_result/
+
 ## 配置说明
 
 使用前需要准备一个本地配置文件：
