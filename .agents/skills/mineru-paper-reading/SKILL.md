@@ -1,6 +1,7 @@
 ---
 name: mineru-paper-reading
-description: Use this skill when the user asks Codex to read a research paper parsed by MinerU, summarize it, preview-read it, decide whether it is worth deep reading, or perform sentence-by-sentence close reading. The input is usually a MinerU output folder containing Markdown, images, JSON, tables, formulas, layout PDF, and the original PDF. The workflow follows Keshav's paper-reading method and supports two modes: a detailed pre-reading decision report and sentence-by-sentence intensive reading.
+description: >-
+  Read research papers parsed by MinerU. Use for pre-reading, paper summaries, worth-reading decisions, sentence-by-sentence close reading, translation, and text-figure-table-formula integrated explanation from a MinerU output folder.
 ---
 
 # MinerU Paper Reading Skill
